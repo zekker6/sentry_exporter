@@ -19,7 +19,7 @@ modules:
     prober: http
     timeout: 5s
     http:
-      prefix: https://sentry.com/api/0/projects/{ORGANIZATION_SLUG}
+      prefix: https://sentry.com/api/0/projects/{ORGANIZATION_SLUG}/
       headers:
         Authorization: Bearer {TOKEN}
 ```
