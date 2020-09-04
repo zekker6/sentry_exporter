@@ -1,7 +1,5 @@
-.promu.yml
-docker
 .gitignore
-Dockerfile
+docker/Dockerfile
 LICENSE
 README.md
 VERSION

@@ -83,9 +83,9 @@ scrape_configs:
 Metrics returned format is the same for both per-project and organization level scrapes.
 
 ```
-probe_sentry_error_received 2556
-probe_sentry_status_code 200
-probe_sentry_content_length 424
-probe_duration_seconds 0.386200
-probe_success 1
+sentry_probe_error_received 4210
+sentry_probe_status_code 200
+sentry_probe_content_length 427
+sentry_probe_duration_seconds 0.115187
+sentry_probe_success 1
 ```

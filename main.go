@@ -92,11 +92,11 @@ func probeHandler(w http.ResponseWriter, r *http.Request, conf *Config) {
 
 	start := time.Now()
 	success := prober(target, w, module)
-	fmt.Fprintf(w, "probe_duration_seconds %f\n", time.Since(start).Seconds())
+	fmt.Fprintf(w, "sentry_probe_duration_seconds %f\n", time.Since(start).Seconds())
 	if success {
-		fmt.Fprintln(w, "probe_success 1")
+		fmt.Fprintln(w, "sentry_probe_success 1")
 	} else {
-		fmt.Fprintln(w, "probe_success 0")
+		fmt.Fprintln(w, "sentry_probe_success 0")
 	}
 }
 
