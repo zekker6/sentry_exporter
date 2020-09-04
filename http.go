@@ -68,15 +68,15 @@ func probeHTTP(target string, w http.ResponseWriter, module Module) (success boo
 			success = true
 		}
 		if success {
-			fmt.Fprintf(w, "probe_sentry_error_received %d\n", extractErrorRate(resp.Body, config))
+			fmt.Fprintf(w, "sentry_probe_error_received %d\n", extractErrorRate(resp.Body, config))
 		}
 	}
 	if resp == nil {
 		resp = &http.Response{}
 	}
 
-	fmt.Fprintf(w, "probe_sentry_status_code %d\n", resp.StatusCode)
-	fmt.Fprintf(w, "probe_sentry_content_length %d\n", resp.ContentLength)
+	fmt.Fprintf(w, "sentry_probe_status_code %d\n", resp.StatusCode)
+	fmt.Fprintf(w, "sentry_probe_content_length %d\n", resp.ContentLength)
 
 	return
 }
