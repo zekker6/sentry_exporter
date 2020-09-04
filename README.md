@@ -1,6 +1,7 @@
 # Sentry exporter
 
-![Docker Pulls](https://img.shields.io/docker/pulls/zekker6/sentry_exporter)
+![Docker Pulls](https://img.shields.io/docker/pulls/zekker6/sentry_exporter?link=https://hub.docker.com/repository/docker/zekker6/sentry_exporter)
+![Docker Image Version (latest by date)](https://img.shields.io/docker/v/zekker6/sentry_exporter?link=https://hub.docker.com/repository/docker/zekker6/sentry_exporter)
 
 An exporter for [Prometheus](https://prometheus.io/) that collects metrics from [Sentry](https://sentry.io).
 
@@ -8,7 +9,7 @@ Tested with Sentry 20.6.0 (37a7530).
 
 ## Install
 
-You can download prebuilt binaries from [GitHub releases](https://github.com/snakecharmer/sentry_exporter/releases)
+You can download prebuilt binaries from [GitHub releases](https://github.com/zekker6/sentry_exporter/releases)
 
 ## Building and running
 
@@ -37,7 +38,7 @@ will return metrics for a probe against the sentry project
     docker build -t sentry_exporter .
     docker run -d -p 9412:9412 --name sentry_exporter -v `pwd`:/config sentry_exporter --config.file=/config/sentry_exporter.yml
 
-Also available on dockerhub.
+Also available on [dockerhub](https://hub.docker.com/repository/docker/zekker6/sentry_exporter).
 
 ## [Configuration](CONFIGURATION.md)
 
@@ -75,4 +76,16 @@ scrape_configs:
         target_label: instance
       - target_label: __address__
         replacement: 127.0.0.1:9412  # The sentry exporter's real hostname:port.
+```
+
+## Metrics returned
+
+Metrics returned format is the same for both per-project and organization level scrapes.
+
+```
+probe_sentry_error_received 2556
+probe_sentry_status_code 200
+probe_sentry_content_length 424
+probe_duration_seconds 0.386200
+probe_success 1
 ```
