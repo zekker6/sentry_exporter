@@ -1,6 +1,10 @@
 # Sentry exporter
 
+![Docker Pulls](https://img.shields.io/docker/pulls/zekker6/sentry_exporter)
+
 An exporter for [Prometheus](https://prometheus.io/) that collects metrics from [Sentry](https://sentry.io).
+
+Tested with Sentry 20.6.0 (37a7530).
 
 ## Install
 
@@ -32,6 +36,8 @@ will return metrics for a probe against the sentry project
 
     docker build -t sentry_exporter .
     docker run -d -p 9412:9412 --name sentry_exporter -v `pwd`:/config sentry_exporter --config.file=/config/sentry_exporter.yml
+
+Also available on dockerhub.
 
 ## [Configuration](CONFIGURATION.md)
 
