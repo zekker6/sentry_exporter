@@ -37,7 +37,7 @@ tarball: $(PROMU)
 
 docker:
 	@echo ">> building docker image"
-	@docker build -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
+	@docker build --file docker/Dockerfile -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
 $(PROMU) promu:
 	@GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu
