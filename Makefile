@@ -27,19 +27,8 @@ vet:
 	@echo ">> vetting code"
 	@$(GO) vet $(pkgs)
 
-build: $(PROMU)
-	@echo ">> building binaries"
-	@$(PROMU) build --prefix $(PREFIX)
-
-tarball: $(PROMU)
-	@echo ">> building release tarball"
-	@$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
-
 docker:
 	@echo ">> building docker image"
 	@docker build --file docker/Dockerfile -t "$(DOCKER_IMAGE_NAME):$(DOCKER_IMAGE_TAG)" .
 
-$(PROMU) promu:
-	@GOOS= GOARCH= $(GO) get -u github.com/prometheus/promu
-
-.PHONY: all style format build test vet tarball docker promu
+.PHONY: all style format build test vet docker
