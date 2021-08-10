@@ -20,4 +20,6 @@ dockers:
   - image_templates:
       - "ghcr.io/zekker6/sentry_exporter:latest"
       - "ghcr.io/zekker6/sentry_exporter:{{ .Tag }}"
-    dockerfile: docker/Dockerfile
+    dockerfile: docker/Dockerfile.goreleaser
+    extra_files:
+      - sentry_exporter.yml
