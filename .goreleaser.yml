@@ -1,0 +1,22 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+dockers:
+  - image_templates:
+      - "ghcr.io/zekker6/sentry_exporter:latest"
+      - "ghcr.io/zekker6/sentry_exporter:{{ .Tag }}"

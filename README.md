@@ -3,6 +3,8 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/zekker6/sentry_exporter?link=https://hub.docker.com/repository/docker/zekker6/sentry_exporter)
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/zekker6/sentry_exporter?link=https://hub.docker.com/repository/docker/zekker6/sentry_exporter)
 
+Also available as ![Github Package](https://github.com/zekker6/sentry_exporter/pkgs/container/sentry_exporter)
+
 An exporter for [Prometheus](https://prometheus.io/) that collects metrics from [Sentry](https://sentry.io).
 
 Tested with Sentry 20.6.0 (37a7530).
