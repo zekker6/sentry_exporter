@@ -3,10 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,7 +20,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/prometheus/common/log"
 	"github.com/prometheus/common/version"
 )
 
@@ -50,12 +54,12 @@ func (sc *SafeConfig) reloadConfig(confFile string) (err error) {
 
 	yamlFile, err := ioutil.ReadFile(confFile)
 	if err != nil {
-		log.Errorf("Error reading config file: %s", err)
+		log.Println("Error reading config file: ", err)
 		return err
 	}
 
 	if err := yaml.Unmarshal(yamlFile, c); err != nil {
-		log.Errorf("Error parsing config file: %s", err)
+		log.Println("Error parsing config file: ", err)
 		return err
 	}
 
@@ -63,7 +67,7 @@ func (sc *SafeConfig) reloadConfig(confFile string) (err error) {
 	sc.C = c
 	sc.Unlock()
 
-	log.Infoln("Loaded config file")
+	log.Println("Loaded config file")
 	return nil
 }
 
@@ -104,6 +108,75 @@ func init() {
 	prometheus.MustRegister(version.NewCollector("sentry_exporter"))
 }
 
+func probeHTTP(target string, w http.ResponseWriter, module Module) (success bool) {
+	config := module.HTTP
+
+	client := &http.Client{
+		Timeout: module.Timeout,
+	}
+
+	requestURL := config.Prefix + target + "/stats/"
+
+	request, err := http.NewRequest("GET", requestURL, nil)
+	if err != nil {
+		log.Println("Error creating request for target", target, err)
+		return
+	}
+
+	for key, value := range config.Headers {
+		if strings.Title(key) == "Host" {
+			request.Host = value
+			continue
+		}
+		request.Header.Set(key, value)
+	}
+
+	resp, err := client.Do(request)
+	// Err won't be nil if redirects were turned off. See https://github.com/golang/go/issues/3795
+	if err != nil && resp == nil {
+		log.Println("Error for HTTP request to", target, err)
+	} else {
+		defer resp.Body.Close()
+		if len(config.ValidStatusCodes) != 0 {
+			for _, code := range config.ValidStatusCodes {
+				if resp.StatusCode == code {
+					success = true
+					break
+				}
+			}
+		} else if 200 <= resp.StatusCode && resp.StatusCode < 300 {
+			success = true
+		}
+		if success {
+			fmt.Fprintf(w, "sentry_probe_error_received %d\n", extractErrorRate(resp.Body, config))
+		}
+	}
+	if resp == nil {
+		resp = &http.Response{}
+	}
+
+	fmt.Fprintf(w, "sentry_probe_status_code %d\n", resp.StatusCode)
+	fmt.Fprintf(w, "sentry_probe_content_length %d\n", resp.ContentLength)
+
+	return
+}
+
+func extractErrorRate(reader io.Reader, config HTTPProbe) int {
+	var re = regexp.MustCompile(`(\d+)]]$`)
+	body, err := ioutil.ReadAll(reader)
+	if err != nil {
+		log.Println("Error reading HTTP body", err)
+		return 0
+	}
+	var str = string(body)
+	matches := re.FindStringSubmatch(str)
+	value, err := strconv.Atoi(matches[1])
+	if err == nil {
+		return value
+	}
+	return 0
+}
+
 func main() {
 	var (
 		configFile    = flag.String("config.file", "sentry_exporter.yml", "Sentry exporter configuration file.")
@@ -120,8 +193,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	log.Infoln("Starting sentry_exporter", version.Info())
-	log.Infoln("Build context", version.BuildContext())
+	log.Println("Starting sentry_exporter", version.Info())
+	log.Println("Build context", version.BuildContext())
 
 	if err := sc.reloadConfig(*configFile); err != nil {
 		log.Fatalf("Error loading config: %s", err)
@@ -135,11 +208,11 @@ func main() {
 			select {
 			case <-hup:
 				if err := sc.reloadConfig(*configFile); err != nil {
-					log.Errorf("Error reloading config: %s", err)
+					log.Println("Error reloading config: ", err)
 				}
 			case rc := <-reloadCh:
 				if err := sc.reloadConfig(*configFile); err != nil {
-					log.Errorf("Error reloading config: %s", err)
+					log.Println("Error reloading config: ", err)
 					rc <- err
 				} else {
 					rc <- nil
@@ -182,7 +255,7 @@ func main() {
             </html>`))
 	})
 
-	log.Infoln("Listening on", *listenAddress)
+	log.Println("Listening on", *listenAddress)
 	if err := http.ListenAndServe(*listenAddress, nil); err != nil {
 		log.Fatalf("Error starting HTTP server: %s", err)
 	}
