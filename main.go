@@ -12,13 +12,12 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"gopkg.in/yaml.v2"
-	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/prometheus/common/version"
 )
@@ -102,10 +101,6 @@ func probeHandler(w http.ResponseWriter, r *http.Request, conf *Config) {
 	} else {
 		fmt.Fprintln(w, "sentry_probe_success 0")
 	}
-}
-
-func init() {
-	prometheus.MustRegister(version.NewCollector("sentry_exporter"))
 }
 
 func probeHTTP(target string, w http.ResponseWriter, module Module) (success bool) {
