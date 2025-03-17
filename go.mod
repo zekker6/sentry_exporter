@@ -5,7 +5,7 @@ go 1.21
 toolchain go1.24.0
 
 require (
-	github.com/prometheus/client_golang v1.21.0
+	github.com/prometheus/client_golang v1.21.1
 	github.com/prometheus/common v0.63.0
 	gopkg.in/yaml.v3 v3.0.1
 )
