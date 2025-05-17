@@ -4,14 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"regexp"
 	"strconv"
-	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -50,7 +48,7 @@ var Probers = map[string]func(string, http.ResponseWriter, Module) bool{
 func (sc *SafeConfig) reloadConfig(confFile string) (err error) {
 	var c = &Config{}
 
-	yamlFile, err := ioutil.ReadFile(confFile)
+	yamlFile, err := os.ReadFile(confFile)
 	if err != nil {
 		log.Println("Error reading config file: ", err)
 		return err
@@ -94,11 +92,17 @@ func probeHandler(w http.ResponseWriter, r *http.Request, conf *Config) {
 
 	start := time.Now()
 	success := prober(target, w, module)
-	fmt.Fprintf(w, "sentry_probe_duration_seconds %f\n", time.Since(start).Seconds())
+	if _, err := fmt.Fprintf(w, "sentry_probe_duration_seconds %f\n", time.Since(start).Seconds()); err != nil {
+		log.Println("error writing probe duration metric:", err)
+	}
 	if success {
-		fmt.Fprintln(w, "sentry_probe_success 1")
+		if _, err := fmt.Fprintln(w, "sentry_probe_success 1"); err != nil {
+			log.Println("error writing probe success metric:", err)
+		}
 	} else {
-		fmt.Fprintln(w, "sentry_probe_success 0")
+		if _, err := fmt.Fprintln(w, "sentry_probe_success 0"); err != nil {
+			log.Println("error writing probe success metric:", err)
+		}
 	}
 }
 
@@ -118,7 +122,7 @@ func probeHTTP(target string, w http.ResponseWriter, module Module) (success boo
 	}
 
 	for key, value := range config.Headers {
-		if strings.Title(key) == "Host" {
+		if http.CanonicalHeaderKey(key) == "Host" {
 			request.Host = value
 			continue
 		}
@@ -130,7 +134,11 @@ func probeHTTP(target string, w http.ResponseWriter, module Module) (success boo
 	if err != nil && resp == nil {
 		log.Println("Error for HTTP request to", target, err)
 	} else {
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				log.Println("error closing response body:", err)
+			}
+		}()
 		if len(config.ValidStatusCodes) != 0 {
 			for _, code := range config.ValidStatusCodes {
 				if resp.StatusCode == code {
@@ -142,22 +150,28 @@ func probeHTTP(target string, w http.ResponseWriter, module Module) (success boo
 			success = true
 		}
 		if success {
-			fmt.Fprintf(w, "sentry_probe_error_received %d\n", extractErrorRate(resp.Body, config))
+			if _, err := fmt.Fprintf(w, "sentry_probe_error_received %d\n", extractErrorRate(resp.Body, config)); err != nil {
+				log.Println("error writing error received metric:", err)
+			}
 		}
 	}
 	if resp == nil {
 		resp = &http.Response{}
 	}
 
-	fmt.Fprintf(w, "sentry_probe_status_code %d\n", resp.StatusCode)
-	fmt.Fprintf(w, "sentry_probe_content_length %d\n", resp.ContentLength)
+	if _, err := fmt.Fprintf(w, "sentry_probe_status_code %d\n", resp.StatusCode); err != nil {
+		log.Println("error writing status code metric:", err)
+	}
+	if _, err := fmt.Fprintf(w, "sentry_probe_content_length %d\n", resp.ContentLength); err != nil {
+		log.Println("error writing content length metric:", err)
+	}
 
 	return
 }
 
 func extractErrorRate(reader io.Reader, config HTTPProbe) int {
 	var re = regexp.MustCompile(`(\d+)]]$`)
-	body, err := ioutil.ReadAll(reader)
+	body, err := io.ReadAll(reader)
 	if err != nil {
 		log.Println("Error reading HTTP body", err)
 		return 0
@@ -183,7 +197,9 @@ func main() {
 	flag.Parse()
 
 	if *showVersion {
-		fmt.Fprintln(os.Stdout, version.Print("sentry_exporter"))
+		if _, err := fmt.Fprintln(os.Stdout, version.Print("sentry_exporter")); err != nil {
+			log.Println("error writing version:", err)
+		}
 		os.Exit(0)
 	}
 
@@ -194,7 +210,7 @@ func main() {
 		log.Fatalf("Error loading config: %s", err)
 	}
 
-	hup := make(chan os.Signal)
+	hup := make(chan os.Signal, 1)
 	reloadCh := make(chan chan error)
 	signal.Notify(hup, syscall.SIGHUP)
 	go func() {
@@ -228,7 +244,9 @@ func main() {
 		func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != "POST" {
 				w.WriteHeader(http.StatusMethodNotAllowed)
-				fmt.Fprintf(w, "This endpoint requires a POST request.\n")
+				if _, err := fmt.Fprintf(w, "This endpoint requires a POST request.\n"); err != nil {
+					log.Println("error writing method not allowed response:", err)
+				}
 				return
 			}
 
@@ -239,14 +257,16 @@ func main() {
 			}
 		})
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`<html>
+		if _, err := w.Write([]byte(`<html>
             <head><title>Sentry Exporter</title></head>
             <body>
             <h1>Sentry Exporter</h1>
             <p><a href="/probe?target=apimutate">Probe sentry project</a></p>
             <p><a href="/metrics">Metrics</a></p>
             </body>
-            </html>`))
+            </html>`)); err != nil {
+			log.Println("error writing root HTML:", err)
+		}
 	})
 
 	log.Println("Listening on", *listenAddress)
