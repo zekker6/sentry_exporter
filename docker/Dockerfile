@@ -10,7 +10,7 @@ ADD . .
 RUN GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o sentry_exporter
 RUN chmod +x sentry_exporter
 
-FROM debian:buster-slim
+FROM debian:12-slim
 
 RUN apt-get update && apt-get install -y ca-certificates
 
