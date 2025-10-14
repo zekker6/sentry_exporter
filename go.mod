@@ -2,7 +2,7 @@ module sentry_exporter
 
 go 1.24.0
 
-toolchain go1.25.2
+toolchain go1.25.3
 
 require (
 	github.com/prometheus/client_golang v1.23.2
