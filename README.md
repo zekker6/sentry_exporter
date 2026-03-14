@@ -25,13 +25,6 @@ go build
 ./sentry_exporter <flags>
 ```
 
-or you can use gox:
-
-```
-go get github.com/mitchellh/gox
-gox
-```
-
 Visiting [http://localhost:9412/probe?target={sentry_project}](http://localhost:9412/probe?target=google.com)
 will return metrics for a probe against the sentry project
 
@@ -63,6 +56,7 @@ The sentry exporter needs to be passed the target as a parameter, this can be
 done with relabelling.
 
 Example config:
+
 ```yml
 scrape_configs:
   - job_name: 'sentry'
@@ -91,3 +85,4 @@ sentry_probe_content_length 427
 sentry_probe_duration_seconds 0.115187
 sentry_probe_success 1
 ```
+
